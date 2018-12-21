@@ -108,7 +108,7 @@ modifyPom {
 }
 
 nexusStaging {
-    packageGroup = "pl.allegro.tech"
+    packageGroup = "pl.allegro"
 
     numberOfRetries = 15
     delayBetweenRetriesInMillis = 5000
