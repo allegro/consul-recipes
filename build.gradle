@@ -2,6 +2,9 @@ buildscript {
     repositories {
         mavenCentral()
     }
+    dependencies {
+        classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.12.0'
+    }
 }
 
 plugins {
@@ -9,7 +12,10 @@ plugins {
     id 'groovy'
     id 'pl.allegro.tech.build.axion-release' version '1.9.2'
     id 'jacoco'
+    id 'com.bmuschko.nexus' version '2.3.1'
 }
+
+apply plugin: 'io.codearte.nexus-staging'
 
 scmVersion {
     tag {
@@ -65,4 +71,40 @@ test {
 
 wrapper {
     gradleVersion = '4.9'
+}
+
+modifyPom {
+    project {
+        name project.name
+        description 'Java library for interacting with Consul.'
+        url 'https://github.com/allegro/consul-recipes'
+        inceptionYear '2018'
+
+        scm {
+            url 'https://github.com/allegro/consul-recipes'
+            connection 'scm:git@github.com:allegro/consul-recipes.git'
+            developerConnection 'scm:git@github.com:allegro/consul-recipes.git'
+        }
+
+        licenses {
+            license {
+                name 'The Apache Software License, Version 2.0'
+                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            }
+        }
+
+        developers {
+            developer {
+                id 'skylab'
+                name 'Team Skylab'
+            }
+        }
+    }
+}
+
+nexusStaging {
+    packageGroup = "pl.allegro.tech"
+
+    numberOfRetries = 15
+    delayBetweenRetriesInMillis = 5000
 }
