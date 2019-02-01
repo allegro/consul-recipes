@@ -136,6 +136,23 @@ serviceInstancesWatcher.watch("my-service", (WatchResult<ServiceInstances> insta
 }));
 ```
 
+##### Health Service Instances Watcher
+
+Same as Catalog Service Instances Watcher, but watches only healthy service instances.
+
+```java
+ExecutorService workerPool = Executors.newFixedThreadPool(10);
+EndpointWatcher<ServiceInstances> serviceInstancesWatcher = consulRecipes.healthServiceInstancesWatcher("my-services",
+            consulRecipes
+                .consulWatcher(workerPool)
+                .build())
+
+...
+
+serviceInstancesWatcher.watch("my-service", (WatchResult<ServiceInstances> instances) -> {
+    // proces instances for my-service
+}));
+```
 
 ### Datacenter reader
 

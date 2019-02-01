@@ -14,6 +14,7 @@ import pl.allegro.tech.discovery.consul.recipes.watch.catalog.ServiceInstances;
 import pl.allegro.tech.discovery.consul.recipes.watch.catalog.ServiceInstancesWatcher;
 import pl.allegro.tech.discovery.consul.recipes.watch.catalog.Services;
 import pl.allegro.tech.discovery.consul.recipes.watch.catalog.ServicesWatcher;
+import pl.allegro.tech.discovery.consul.recipes.watch.health.HealthServiceInstancesWatcher;
 
 import java.net.URI;
 import java.time.Duration;
@@ -93,6 +94,10 @@ public class ConsulRecipes {
 
     public EndpointWatcher<ServiceInstances> catalogServiceInstancesWatcher(String serviceName, ConsulWatcher watcher) {
         return new ServiceInstancesWatcher(serviceName, watcher, jsonDeserializer);
+    }
+
+    public EndpointWatcher<ServiceInstances> healthServiceInstancesWatcher(String serviceName, ConsulWatcher watcher) {
+        return new HealthServiceInstancesWatcher(serviceName, watcher, jsonDeserializer);
     }
 
     public LeaderElector.Builder leaderElector(String serviceName) {

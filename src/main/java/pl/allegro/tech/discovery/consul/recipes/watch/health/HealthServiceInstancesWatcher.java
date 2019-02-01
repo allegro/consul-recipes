@@ -1,9 +1,12 @@
-package pl.allegro.tech.discovery.consul.recipes.watch.catalog;
+package pl.allegro.tech.discovery.consul.recipes.watch.health;
 
 import pl.allegro.tech.discovery.consul.recipes.json.JsonDecoder;
 import pl.allegro.tech.discovery.consul.recipes.json.JsonDeserializer;
 import pl.allegro.tech.discovery.consul.recipes.watch.ConsulWatcher;
 import pl.allegro.tech.discovery.consul.recipes.watch.EndpointWatcher;
+import pl.allegro.tech.discovery.consul.recipes.watch.catalog.ServiceInstance;
+import pl.allegro.tech.discovery.consul.recipes.watch.catalog.ServiceInstances;
+import pl.allegro.tech.discovery.consul.recipes.watch.catalog.ServiceInstancesWatcher;
 
 import java.io.IOException;
 import java.util.List;
@@ -12,10 +15,11 @@ import java.util.stream.Collectors;
 
 import static pl.allegro.tech.discovery.consul.recipes.json.JsonValueReader.requiredValue;
 
-public class ServiceInstancesWatcher extends EndpointWatcher<ServiceInstances> {
+public class HealthServiceInstancesWatcher extends EndpointWatcher<ServiceInstances> {
 
-    public ServiceInstancesWatcher(String serviceName, ConsulWatcher watcher, JsonDeserializer jsonDeserializer) {
-        super("/v1/catalog/service/" + serviceName, watcher, new ServiceInstancesJsonDecoder(serviceName, jsonDeserializer));
+    public HealthServiceInstancesWatcher(String serviceName, ConsulWatcher watcher, JsonDeserializer jsonDeserializer) {
+        super("/v1/health/service/" + serviceName + "?passing=true", watcher,
+                new ServiceInstancesJsonDecoder(serviceName, jsonDeserializer));
     }
 
     private static class ServiceInstancesJsonDecoder implements JsonDecoder<ServiceInstances> {
@@ -42,12 +46,15 @@ public class ServiceInstancesWatcher extends EndpointWatcher<ServiceInstances> {
             }
 
             List<ServiceInstance> instances = services.stream()
-                    .map(props -> new ServiceInstance(
-                            requiredValue(props, "ServiceID", String.class),
-                            requiredValue(props, "ServiceTags", List.class),
-                            requiredValue(props, "ServiceAddress", String.class),
-                            requiredValue(props, "ServicePort", Integer.class)
-                    ))
+                    .map(props -> {
+                        Map<String, ?> service = requiredValue(props, "Service", Map.class);
+                        return new ServiceInstance(
+                                requiredValue(service, "ID", String.class),
+                                requiredValue(service, "Tags", List.class),
+                                requiredValue(service, "Address", String.class),
+                                requiredValue(service, "Port", Integer.class)
+                        );
+                    })
                     .collect(Collectors.toList());
             return new ServiceInstances(serviceName, instances);
         }
