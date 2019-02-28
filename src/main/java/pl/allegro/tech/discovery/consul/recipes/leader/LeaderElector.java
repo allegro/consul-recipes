@@ -16,6 +16,7 @@ import pl.allegro.tech.discovery.consul.recipes.json.JsonDeserializer;
 import pl.allegro.tech.discovery.consul.recipes.json.JsonSerializer;
 import pl.allegro.tech.discovery.consul.recipes.session.Session;
 import pl.allegro.tech.discovery.consul.recipes.watch.ConsulWatcher;
+import pl.allegro.tech.discovery.consul.recipes.watch.Disposable;
 import pl.allegro.tech.discovery.consul.recipes.watch.WatchResult;
 
 import java.io.Closeable;
@@ -53,6 +54,8 @@ public class LeaderElector implements Closeable {
     private final int lockDelaySeconds;
     private final int lockRescueDelaySeconds;
     private final LockAcquirer lockAcquirer;
+
+    private Disposable disposable;
 
     private volatile boolean isLeader = false;
 
@@ -96,14 +99,16 @@ public class LeaderElector implements Closeable {
     public void start() {
         session.start();
         lockAcquirer.start();
-        consulWatcher.watchEndpoint(lockEndpoint(serviceName), lockAcquirer::leaderNodeUpdate, this::watchException);
+        disposable = consulWatcher.watchEndpoint(lockEndpoint(serviceName), lockAcquirer::leaderNodeUpdate, this::watchException);
     }
 
     @Override
     public void close() {
         session.close();
         lockAcquirer.close();
-        consulWatcher.stopWatchingEndpoint(lockEndpoint(serviceName));
+        if (disposable != null) {
+            disposable.dispose();
+        }
         notALeader();
     }
 

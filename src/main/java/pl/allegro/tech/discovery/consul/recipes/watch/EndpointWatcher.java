@@ -15,18 +15,14 @@ public class EndpointWatcher<T> {
         this.decoder = decoder;
     }
 
-    public void watch(Consumer<WatchResult<T>> consumer, Consumer<Exception> failureConsumer) {
-        watcher.watchEndpoint(endpoint, (watchResult) -> {
+    public Disposable watch(Consumer<WatchResult<T>> consumer, Consumer<Exception> failureConsumer) {
+        return watcher.watchEndpoint(endpoint, (watchResult) -> {
             try {
                 consumer.accept(watchResult.map(decoder::decode));
             } catch (Exception e) {
                 failureConsumer.accept(e);
             }
         }, failureConsumer);
-    }
-
-    public void stopWatching() {
-        watcher.stopWatchingEndpoint(endpoint);
     }
 
     public ConsulWatcherStats stats() {

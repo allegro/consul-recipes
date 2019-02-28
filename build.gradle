@@ -41,7 +41,7 @@ repositories {
 dependencies {
     compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.22'
 
-    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.7.0'
+    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.13.1'
 
     compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
     compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'
@@ -53,7 +53,7 @@ dependencies {
 
     testCompile group: 'org.awaitility', name: 'awaitility', version: '2.0.0'
     testCompile group: 'org.awaitility', name: 'awaitility-groovy', version: '2.0.0'
-    testCompile group: 'com.github.tomakehurst', name: 'wiremock', version: '2.5.0'
+    testCompile group: 'com.github.tomakehurst', name: 'wiremock', version: '2.21.0'
 
     testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
     testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'
