@@ -268,13 +268,14 @@ class ConsulWatcherTest extends Specification {
         errorCode << [403, 500]
     }
 
-    def "should not invoke callbacks for cancelled requests"() {
+    def "should not invoke callbacks for disposed watch"() {
         given:
         def callCount = 0
 
         consul.stubFor(get(urlPathEqualTo('/cancel'))
                 .willReturn(aResponse()
                 .withHeader('X-Consul-Index', '123')
+                .withFixedDelay(50)
                 .withBody('123')))
 
         when:

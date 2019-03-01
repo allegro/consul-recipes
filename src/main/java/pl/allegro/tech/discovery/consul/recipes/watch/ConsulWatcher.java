@@ -88,6 +88,8 @@ public class ConsulWatcher implements AutoCloseable {
 
             Request request = new Request.Builder().get().url(url).build();
             httpClient.newCall(request).enqueue(callback);
+        } else {
+            logger.info("Stopping long poll at endpoint {}", endpoint);
         }
     }
 
