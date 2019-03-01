@@ -270,26 +270,33 @@ class ConsulWatcherTest extends Specification {
 
     def "should not invoke callbacks for disposed watch"() {
         given:
-        def callCount = 0
+        def first = 0
+        def second = 0
 
         consul.stubFor(get(urlPathEqualTo('/cancel'))
                 .willReturn(aResponse()
                 .withHeader('X-Consul-Index', '123')
-                .withFixedDelay(50)
+                .withFixedDelay(100)
                 .withBody('123')))
 
         when:
-        watcher
-                .watchEndpoint("/cancel", { it -> callCount += 1}, { it -> callCount += 1})
-                .dispose()
+        def canceller = watcher
+                .watchEndpoint("/cancel", { it -> first += 1 }, { it -> first += 1 })
+
+        def canceller2 = watcher
+                .watchEndpoint("/cancel", { it -> second += 1}, { it -> second += 1})
+
+        canceller.cancel()
 
         then:
         await().until({
-            verify(exactly(1), getRequestedFor(urlPathEqualTo("/cancel")))
+            verify(exactly(2), getRequestedFor(urlPathEqualTo("/cancel")))
+            canceller2.cancel()
             true
         })
 
-        callCount == 0
+        first == 0
+        second == 1
     }
 
 }

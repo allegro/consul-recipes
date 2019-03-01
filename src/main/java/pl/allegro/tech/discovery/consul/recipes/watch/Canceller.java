@@ -1,9 +1,9 @@
 package pl.allegro.tech.discovery.consul.recipes.watch;
 
-public class Disposable {
+public class Canceller {
     volatile boolean cancelled;
 
-    public final void dispose() {
+    public final void cancel() {
         cancelled = true;
     }
 

@@ -50,11 +50,11 @@ ExecutorService workerPool = Executors.newFixedThreadPool(10);
 
 ConsulWatcher watcher = consulRecipes.consulWatcher(workerPool).build();
 
-Disposable disposable = watcher.watchEndpoint("/v1/catalog/services", (content) -> {
+Canceller callbackCanceller = watcher.watchEndpoint("/v1/catalog/services", (content) -> {
     // process String content
 });
 
-disposable.disponse();
+callbackCanceller.cancel();
 // close stops watches on all watched endpoints
 watcher.close();
 // but you have to take care of cleaning up the worker pool

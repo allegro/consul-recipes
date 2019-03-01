@@ -42,7 +42,7 @@ class ConsulLongPollCallback implements Callback {
 
     private final ConsulWatcherStats stats;
 
-    private final Disposable disposable;
+    private final Canceller callbackCanceller;
 
     ConsulLongPollCallback(ExecutorService workerPool,
                            BackoffRunner backoffRunner,
@@ -51,7 +51,7 @@ class ConsulLongPollCallback implements Callback {
                            Consumer<Exception> failureConsumer,
                            ReconnectCallback reconnect,
                            ConsulWatcherStats stats,
-                           Disposable disposable) {
+                           Canceller callbackCanceller) {
         this.workerPool = workerPool;
         this.backoffRunner = backoffRunner;
         this.endpoint = endpoint;
@@ -59,13 +59,13 @@ class ConsulLongPollCallback implements Callback {
         this.failureConsumer = failureConsumer;
         this.reconnect = reconnect;
         this.stats = stats;
-        this.disposable = disposable;
+        this.callbackCanceller = callbackCanceller;
     }
 
     @Override
     public void onResponse(Call call, Response response) {
         if (isCancelled()) {
-            if (null != response.body()) {
+            if (response.body() != null) {
                 response.close();
             }
             return;
@@ -92,7 +92,7 @@ class ConsulLongPollCallback implements Callback {
     }
 
     boolean isCancelled() {
-        return disposable.isCancelled();
+        return callbackCanceller.isCancelled();
     }
 
     private void onSuccessfulResponse(Call call, Response response) {

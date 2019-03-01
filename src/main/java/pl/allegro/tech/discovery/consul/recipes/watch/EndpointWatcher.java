@@ -15,7 +15,7 @@ public class EndpointWatcher<T> {
         this.decoder = decoder;
     }
 
-    public Disposable watch(Consumer<WatchResult<T>> consumer, Consumer<Exception> failureConsumer) {
+    public Canceller watch(Consumer<WatchResult<T>> consumer, Consumer<Exception> failureConsumer) {
         return watcher.watchEndpoint(endpoint, (watchResult) -> {
             try {
                 consumer.accept(watchResult.map(decoder::decode));

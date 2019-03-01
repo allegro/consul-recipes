@@ -46,10 +46,10 @@ public class ConsulWatcher implements AutoCloseable {
         return new ConsulWatcher.Builder(httpClient, workerPool);
     }
 
-    public Disposable watchEndpoint(String endpoint, Consumer<WatchResult<String>> consumer, Consumer<Exception> failureConsumer) {
+    public Canceller watchEndpoint(String endpoint, Consumer<WatchResult<String>> consumer, Consumer<Exception> failureConsumer) {
         HttpUrl normalizedEndpoint = normalizeEndpoint(endpoint);
         logger.info("Starting HTTP long poll for endpoint: {}", normalizedEndpoint);
-        Disposable disposable = new Disposable();
+        Canceller callbackCanceller = new Canceller();
         watchAtIndex(
                 normalizedEndpoint,
                 new ConsulLongPollCallback(
@@ -60,11 +60,11 @@ public class ConsulWatcher implements AutoCloseable {
                         failureConsumer,
                         this::reconnect,
                         stats,
-                        disposable),
+                        callbackCanceller),
                 0
         );
 
-        return disposable;
+        return callbackCanceller;
     }
 
     private HttpUrl normalizeEndpoint(String endpoint) {
