@@ -65,6 +65,9 @@ class ConsulLongPollCallback implements Callback {
     @Override
     public void onResponse(Call call, Response response) {
         if (isCancelled()) {
+            if (null != response.body()) {
+                response.close();
+            }
             return;
         }
 
