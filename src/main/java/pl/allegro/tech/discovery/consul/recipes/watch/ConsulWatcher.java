@@ -8,9 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Clock;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -28,8 +25,6 @@ public class ConsulWatcher implements AutoCloseable {
     private final BackoffRunner backoffRunner;
 
     private final boolean allowStale;
-
-    private final Set<HttpUrl> polledEndpoints = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private final ConsulWatcherStats stats;
 
@@ -51,10 +46,10 @@ public class ConsulWatcher implements AutoCloseable {
         return new ConsulWatcher.Builder(httpClient, workerPool);
     }
 
-    public void watchEndpoint(String endpoint, Consumer<WatchResult<String>> consumer, Consumer<Exception> failureConsumer) {
+    public Canceller watchEndpoint(String endpoint, Consumer<WatchResult<String>> consumer, Consumer<Exception> failureConsumer) {
         HttpUrl normalizedEndpoint = normalizeEndpoint(endpoint);
         logger.info("Starting HTTP long poll for endpoint: {}", normalizedEndpoint);
-        polledEndpoints.add(normalizedEndpoint);
+        Canceller callbackCanceller = new Canceller();
         watchAtIndex(
                 normalizedEndpoint,
                 new ConsulLongPollCallback(
@@ -64,10 +59,12 @@ public class ConsulWatcher implements AutoCloseable {
                         consumer,
                         failureConsumer,
                         this::reconnect,
-                        stats
-                ),
+                        stats,
+                        callbackCanceller),
                 0
         );
+
+        return callbackCanceller;
     }
 
     private HttpUrl normalizeEndpoint(String endpoint) {
@@ -82,7 +79,7 @@ public class ConsulWatcher implements AutoCloseable {
     }
 
     private void watchAtIndex(HttpUrl endpoint, ConsulLongPollCallback callback, long index) {
-        if (polledEndpoints.contains(endpoint)) {
+        if (!callback.isCancelled()) {
             logger.trace("Starting long poll at endpoint {} with index {}", endpoint, index);
 
             HttpUrl url = endpoint.newBuilder()
@@ -100,24 +97,13 @@ public class ConsulWatcher implements AutoCloseable {
         watchAtIndex(endpoint, callback, index);
     }
 
-    public void stopWatchingEndpoint(String endpoint) {
-        stopWatchingEndpoint(normalizeEndpoint(endpoint));
-    }
-
-    private void stopWatchingEndpoint(HttpUrl endpoint) {
-        logger.info("Stopping HTTP long poll at endpoint {}", endpoint);
-        polledEndpoints.remove(endpoint);
-    }
-
     public ConsulWatcherStats stats() {
         return stats;
     }
 
     @Override
     public void close() throws Exception {
-        for (HttpUrl endpoint : polledEndpoints) {
-            stopWatchingEndpoint(endpoint);
-        }
+        httpClient.dispatcher().cancelAll();
         this.backoffRunner.close();
     }
 

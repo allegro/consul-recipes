@@ -50,18 +50,15 @@ ExecutorService workerPool = Executors.newFixedThreadPool(10);
 
 ConsulWatcher watcher = consulRecipes.consulWatcher(workerPool).build();
 
-watcher.watchEndpoint("/v1/catalog/services", (content) -> {
+Canceller callbackCanceller = watcher.watchEndpoint("/v1/catalog/services", (content) -> {
     // process String content
 });
 
-try {
-    watcher.stopWatchingEndpoint("/v1/catalog/services");
-} finally {
-    // close stops watches on all watched endpoints
-    watcher.close();
-    // but you have to take care of cleaning up the worker pool
-    workerPool.shutdown();
-}
+callbackCanceller.cancel();
+// close stops watches on all watched endpoints
+watcher.close();
+// but you have to take care of cleaning up the worker pool
+workerPool.shutdown();
 ```
 
 #### Typed Watcher

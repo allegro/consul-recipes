@@ -42,13 +42,16 @@ class ConsulLongPollCallback implements Callback {
 
     private final ConsulWatcherStats stats;
 
+    private final Canceller callbackCanceller;
+
     ConsulLongPollCallback(ExecutorService workerPool,
                            BackoffRunner backoffRunner,
                            HttpUrl endpoint,
                            Consumer<WatchResult<String>> consumer,
                            Consumer<Exception> failureConsumer,
                            ReconnectCallback reconnect,
-                           ConsulWatcherStats stats) {
+                           ConsulWatcherStats stats,
+                           Canceller callbackCanceller) {
         this.workerPool = workerPool;
         this.backoffRunner = backoffRunner;
         this.endpoint = endpoint;
@@ -56,10 +59,18 @@ class ConsulLongPollCallback implements Callback {
         this.failureConsumer = failureConsumer;
         this.reconnect = reconnect;
         this.stats = stats;
+        this.callbackCanceller = callbackCanceller;
     }
 
     @Override
     public void onResponse(Call call, Response response) {
+        if (isCancelled()) {
+            if (response.body() != null) {
+                response.close();
+            }
+            return;
+        }
+
         if (response.isSuccessful()) {
             onSuccessfulResponse(call, response);
         } else {
@@ -69,11 +80,19 @@ class ConsulLongPollCallback implements Callback {
 
     @Override
     public void onFailure(Call call, IOException exception) {
+        if (isCancelled()) {
+            return;
+        }
+
         failureConsumer.accept(exception);
         reconnectAfterFailureAndRun(
                 backoff -> logger.error("Long poll failed on endpoint {}, retrying with {}ms backoff",
                         endpoint, backoff, exception)
         );
+    }
+
+    boolean isCancelled() {
+        return callbackCanceller.isCancelled();
     }
 
     private void onSuccessfulResponse(Call call, Response response) {
