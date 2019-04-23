@@ -117,7 +117,7 @@ public class ConsulWatcher implements AutoCloseable {
 
         private Clock clock = Clock.systemDefaultZone();
 
-        private boolean allowStale = true;
+        private boolean allowStale = false;
 
         private int initialReconnectBackoffMillis = 100;
 
@@ -151,8 +151,8 @@ public class ConsulWatcher implements AutoCloseable {
             return this;
         }
 
-        public Builder requireDefaultConsistency() {
-            this.allowStale = false;
+        public Builder allowStale(boolean allow) {
+            this.allowStale = allow;
             return this;
         }
 
