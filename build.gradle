@@ -10,9 +10,9 @@ buildscript {
 plugins {
     id 'java'
     id 'groovy'
-    id 'pl.allegro.tech.build.axion-release' version '1.9.2'
+    id 'pl.allegro.tech.build.axion-release' version '1.13.3'
     id 'jacoco'
-    id 'com.bmuschko.nexus' version '2.3.1'
+    id 'maven-publish'
 }
 
 apply plugin: 'io.codearte.nexus-staging'
@@ -29,7 +29,7 @@ scmVersion {
     }
 }
 
-sourceCompatibility = 1.8
+sourceCompatibility = JavaVersion.VERSION_11
 
 project.group = 'pl.allegro.tech.discovery'
 project.version = scmVersion.version
@@ -39,33 +39,37 @@ repositories {
 }
 
 dependencies {
-    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.22'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.22'
 
-    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.13.1'
+    implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.13.1'
 
     compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
     compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'
 
-    testCompile group: 'org.spockframework', name: 'spock-core', version: '1.0-groovy-2.4'
+    testImplementation group: 'org.spockframework', name: 'spock-core', version: '1.0-groovy-2.4'
 
-    testCompile group: 'ch.qos.logback', name: 'logback-core', version: '1.1.8'
-    testCompile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.8'
+    testImplementation group: 'ch.qos.logback', name: 'logback-core', version: '1.1.8'
+    testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.8'
 
-    testCompile group: 'org.awaitility', name: 'awaitility', version: '2.0.0'
-    testCompile group: 'org.awaitility', name: 'awaitility-groovy', version: '2.0.0'
-    testCompile group: 'com.github.tomakehurst', name: 'wiremock', version: '2.21.0'
+    testImplementation group: 'org.awaitility', name: 'awaitility', version: '2.0.0'
+    testImplementation group: 'org.awaitility', name: 'awaitility-groovy', version: '2.0.0'
+    testImplementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.21.0'
 
-    testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
-    testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'
 
-    testCompile group: 'com.pszymczyk.consul', name: 'embedded-consul', version: '1.1.1'
-    testCompile group: 'com.ecwid.consul', name: 'consul-api', version: '1.4.1'
+    testImplementation group: 'com.pszymczyk.consul', name: 'embedded-consul', version: '1.1.1'
+    testImplementation group: 'com.ecwid.consul', name: 'consul-api', version: '1.4.1'
 }
 
 compileJava {
     options.encoding = 'UTF-8'
     options.incremental = true
     options.compilerArgs << '-parameters'
+}
+
+java {
+    withSourcesJar()
 }
 
 test {
@@ -75,33 +79,36 @@ test {
 }
 
 wrapper {
-    gradleVersion = '4.9'
+    gradleVersion = '7.2'
 }
 
-modifyPom {
-    project {
-        name project.name
-        description 'Java library for interacting with Consul.'
-        url 'https://github.com/allegro/consul-recipes'
-        inceptionYear '2018'
-
-        scm {
-            url 'https://github.com/allegro/consul-recipes'
-            connection 'scm:git@github.com:allegro/consul-recipes.git'
-            developerConnection 'scm:git@github.com:allegro/consul-recipes.git'
-        }
-
-        licenses {
-            license {
-                name 'The Apache Software License, Version 2.0'
-                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-            }
-        }
-
-        developers {
-            developer {
-                id 'skylab'
-                name 'Team Skylab'
+publishing {
+    publications {
+        sonatype(MavenPublication) { publication ->
+            artifact jar
+            artifact sourcesJar
+            pom {
+                name = project.name
+                description = 'Java library for interacting with Consul.'
+                url = 'https://github.com/allegro/consul-recipes'
+                inceptionYear = '2018'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'skylab'
+                        name = 'Team Skylab'
+                    }
+                }
+                scm {
+                    url = 'https://github.com/allegro/consul-recipes'
+                    connection = 'scm:git@github.com:allegro/consul-recipes.git'
+                    developerConnection = 'scm:git@github.com:allegro/consul-recipes.git'
+                }
             }
         }
     }
