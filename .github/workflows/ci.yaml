@@ -13,19 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: '-Dfile.encoding=utf-8 -Dorg.gradle.daemon=false'
-      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
 
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref }}
-
-      - uses: allegro-actions/require-issue@v1
-        with:
-          host: jira.allegrogroup.com
-          token: ${JIRA_TOKEN}
-          includeMerges: false
 
       - uses: gradle/wrapper-validation-action@v1
 
@@ -37,8 +30,8 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew clean check
 
-      - name: Junit report
-        uses: allegro-actions/junit-reporter@v1
-        if: ${{ success() || failure() }}
-        with:
-          path: '**/test-results/*/*.xml'
+      - name: Jacoco
+        run: ./gradlew jacocoTestReport
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
