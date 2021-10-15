@@ -46,6 +46,7 @@ public class LeaderElector implements Closeable {
     private final String nodeId;
     private final OkHttpClient httpClient;
     private final HttpUrl baseUrl;
+    private final String aclToken;
     private final ConsulWatcher consulWatcher;
     private final JsonDeserializer jsonDeserializer;
     private final List<LeadershipObserver> observers = new CopyOnWriteArrayList<>();
@@ -62,6 +63,7 @@ public class LeaderElector implements Closeable {
     private LeaderElector(String serviceName,
                           String nodeId,
                           URI baseUri,
+                          String aclToken,
                           OkHttpClient httpClient,
                           Session session,
                           ScheduledExecutorService acquirementPool,
@@ -73,6 +75,7 @@ public class LeaderElector implements Closeable {
         this.serviceName = serviceName;
         this.nodeId = nodeId;
         this.baseUrl = HttpUrl.get(baseUri);
+        this.aclToken = aclToken;
         this.httpClient = httpClient;
         this.session = session;
         this.acquirementPool = acquirementPool;
@@ -220,12 +223,16 @@ public class LeaderElector implements Closeable {
             try {
                 String body = nodeId;
 
-                Request request = new Request.Builder()
+                Request.Builder requestBuilder = new Request.Builder()
                         .url(lockUrl.newBuilder().addQueryParameter("acquire", session.currentId()).build())
-                        .put(RequestBody.create(JSON_MEDIA_TYPE, body))
-                        .build();
+                        .put(RequestBody.create(JSON_MEDIA_TYPE, body));
 
-                httpClient.newCall(request)
+                if (aclToken != null) {
+                    requestBuilder.addHeader("X-Consul-Token", aclToken);
+                }
+
+                httpClient
+                        .newCall(requestBuilder.build())
                         .enqueue(new LockAcquisitionCallback(LeaderElector.this::becameLeader, acquirementPool));
             } catch (Exception e) {
                 logger.error("Couldn't acquire lock", e);
@@ -285,6 +292,7 @@ public class LeaderElector implements Closeable {
         private ScheduledExecutorService lockAcquirementPool = null;
         private Session session = null;
         private URI agentUri = URI.create("http://localhost:8500");
+        private String aclToken = null;
         private String nodeId = UUID.randomUUID().toString();
         private int lockDelaySeconds = 16;
         private int lockRescueDelaySeconds = (int) Duration.ofMinutes(5).getSeconds();
@@ -327,6 +335,7 @@ public class LeaderElector implements Closeable {
                     serviceName,
                     nodeId,
                     agentUri,
+                    aclToken,
                     httpClient,
                     session,
                     lockAcquirementPool,
@@ -339,6 +348,11 @@ public class LeaderElector implements Closeable {
 
         public Builder withAgentUri(URI agentUri) {
             this.agentUri = agentUri;
+            return this;
+        }
+
+        public Builder withAclToken(String aclToken) {
+            this.aclToken = aclToken;
             return this;
         }
 
