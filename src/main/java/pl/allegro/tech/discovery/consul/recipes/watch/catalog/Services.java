@@ -1,5 +1,6 @@
 package pl.allegro.tech.discovery.consul.recipes.watch.catalog;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -12,11 +13,11 @@ public class Services {
         this.serviceNamesToTags = serviceNamesToTags;
     }
 
-    boolean containsService(String serviceName) {
+    public boolean containsService(String serviceName) {
         return serviceNamesToTags.containsKey(serviceName);
     }
 
-    List<String> tagsForService(String serviceName) {
+    public List<String> tagsForService(String serviceName) {
         if (!containsService(serviceName)) {
             throw new IllegalArgumentException("Service " + serviceName + " is not found in catalog.");
         }
@@ -25,6 +26,10 @@ public class Services {
 
     public Set<String> serviceNames() {
         return serviceNamesToTags.keySet();
+    }
+
+    public List<String> tagsForServiceOrNull(String serviceName) {
+        return Collections.unmodifiableList(serviceNamesToTags.get(serviceName));
     }
 
     @Override
