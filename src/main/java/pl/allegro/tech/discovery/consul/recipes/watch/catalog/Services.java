@@ -29,7 +29,8 @@ public class Services {
     }
 
     public List<String> tagsForServiceOrNull(String serviceName) {
-        return Collections.unmodifiableList(serviceNamesToTags.get(serviceName));
+        List<String> serviceTags = serviceNamesToTags.get(serviceName);
+        return serviceTags != null ? Collections.unmodifiableList(serviceTags) : null;
     }
 
     @Override
