@@ -6,7 +6,7 @@ Set of high level recipes for working with Consul.
 ## Usage
 
 ```groovy
-compile group: 'pl.allegro.tech.discovery', name: 'consul-recipes', version: '0.8.5'
+compile group: 'pl.allegro.tech.discovery', name: 'consul-recipes', version: '0.8.6'
 ```
 
 ## Recipes
