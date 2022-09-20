@@ -91,9 +91,6 @@ publishing {
     publications {
         sonatype(MavenPublication) { publication ->
             from components.java
-            artifact jar
-            artifact sourcesJar
-            artifact javadocJar
             pom {
                 name = project.name
                 description = 'Java library for interacting with Consul.'
