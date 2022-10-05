@@ -1,5 +1,7 @@
 package pl.allegro.tech.discovery.consul.recipes.watch.health;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.allegro.tech.discovery.consul.recipes.json.JsonDecoder;
 import pl.allegro.tech.discovery.consul.recipes.json.JsonDeserializer;
 import pl.allegro.tech.discovery.consul.recipes.watch.ConsulWatcher;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 import static pl.allegro.tech.discovery.consul.recipes.json.JsonValueReader.requiredValue;
 
 public class HealthServiceInstancesWatcher extends EndpointWatcher<ServiceInstances> {
+    private static final Logger logger = LoggerFactory.getLogger(HealthServiceInstancesWatcher.class);
 
     public HealthServiceInstancesWatcher(String serviceName, ConsulWatcher watcher, JsonDeserializer jsonDeserializer) {
         super("/v1/health/service/" + serviceName + "?passing=true", watcher,
@@ -48,11 +51,17 @@ public class HealthServiceInstancesWatcher extends EndpointWatcher<ServiceInstan
             List<ServiceInstance> instances = services.stream()
                     .map(props -> {
                         Map<String, ?> service = requiredValue(props, "Service", Map.class);
+                        Integer port = 0;
+                        try {
+                            port = requiredValue(service, "Port", Integer.class);
+                        } catch (JsonDecoder.JsonDecodeException exception){
+                            logger.warn("Port has been missing setting up 0 as default");
+                        }
                         return new ServiceInstance(
                                 requiredValue(service, "ID", String.class),
                                 requiredValue(service, "Tags", List.class),
                                 requiredValue(service, "Address", String.class),
-                                requiredValue(service, "Port", Integer.class)
+                                port
                         );
                     })
                     .collect(Collectors.toList());
