@@ -1,7 +1,9 @@
 package pl.allegro.tech.discovery.consul.recipes
 
+import com.ecwid.consul.v1.Response
 import com.ecwid.consul.v1.agent.AgentConsulClient
 import com.ecwid.consul.v1.agent.model.NewService
+import com.ecwid.consul.v1.agent.model.Service
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Multimap
 import com.pszymczyk.consul.ConsulPorts
@@ -87,6 +89,11 @@ class ConsulCluster extends ExternalResource {
     void deregisterService(String serviceId, String dc, String nodeName) {
         def client = new AgentConsulClient("localhost", getHttpPort(dc, nodeName))
         client.agentServiceDeregister(serviceId)
+    }
+
+    Response<Map<String, Service>> findAllServices(String dc, String nodeName){
+        def client = new AgentConsulClient("localhost", getHttpPort(dc, nodeName))
+        return client.getAgentServices()
     }
 
     static class Builder {

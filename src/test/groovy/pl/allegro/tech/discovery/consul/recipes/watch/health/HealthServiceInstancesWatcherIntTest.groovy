@@ -16,6 +16,7 @@ import spock.util.concurrent.PollingConditions
 
 import java.util.concurrent.Executors
 
+
 class HealthServiceInstancesWatcherIntTest extends Specification {
 
     static Logger logger = LoggerFactory.getLogger(HealthServiceInstancesWatcherIntTest)
@@ -35,6 +36,12 @@ class HealthServiceInstancesWatcherIntTest extends Specification {
             recipes.consulWatcher(Executors.newFixedThreadPool(1))
                     .withBackoff(100, 1000)
                     .build()) as EndpointWatcher<Services>
+
+    def cleanup() {
+        consulCluster.findAllServices("dc1", "node1-dc1").getValue().forEach { key, val ->
+            consulCluster.deregisterService(key, "dc1", "node1-dc1")
+        }
+    }
 
     def "should watch only healthy services"() {
         given: "watcher on my-service details"
