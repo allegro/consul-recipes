@@ -20,15 +20,17 @@ import java.util.concurrent.Executors
 class HealthServiceInstancesWatcherIntTest extends Specification {
 
     static Logger logger = LoggerFactory.getLogger(HealthServiceInstancesWatcherIntTest)
+    public static final String GIVEN_DC = "dc1"
+    public static final String GIVEN_NODE = "node1-dc1"
 
     @Shared
     @ClassRule
     ConsulCluster consulCluster = new ConsulCluster.Builder()
-            .withNode("dc1", "node1-dc1")
+            .withNode(GIVEN_DC, GIVEN_NODE)
             .build()
 
     private ConsulRecipes recipes = ConsulRecipes.consulRecipes()
-            .withAgentUri(URI.create("http://localhost:${consulCluster.getHttpPort("dc1", "node1-dc1")}"))
+            .withAgentUri(URI.create("http://localhost:${consulCluster.getHttpPort(GIVEN_DC, GIVEN_NODE)}"))
             .withJsonDeserializer(new JacksonJsonDeserializer(new ObjectMapper()))
             .build()
 
@@ -38,9 +40,7 @@ class HealthServiceInstancesWatcherIntTest extends Specification {
                     .build()) as EndpointWatcher<Services>
 
     def cleanup() {
-        consulCluster.findAllServices("dc1", "node1-dc1").getValue().forEach { key, val ->
-            consulCluster.deregisterService(key, "dc1", "node1-dc1")
-        }
+        consulCluster.deregisterAllServices(GIVEN_DC, GIVEN_NODE)
     }
 
     def "should watch only healthy services"() {
@@ -57,10 +57,10 @@ class HealthServiceInstancesWatcherIntTest extends Specification {
         }
 
         when: "unhealthy service instance is registered"
-        consulCluster.registerUnhealthyServiceInstance("my-service", "dc1", "node1-dc1")
+        consulCluster.registerUnhealthyServiceInstance("my-service", GIVEN_DC, GIVEN_NODE)
 
         and: "healthy service instance is registered"
-        consulCluster.registerHealthyServiceInstance("my-service", "dc1", "node1-dc1", ["tag1", "tag2"])
+        consulCluster.registerHealthyServiceInstance("my-service", GIVEN_DC, GIVEN_NODE, ["tag1", "tag2"])
 
         then: "watcher caught new state with only healthy service instance"
         new PollingConditions(timeout: 10).eventually {
@@ -87,10 +87,10 @@ class HealthServiceInstancesWatcherIntTest extends Specification {
         }
 
         when: "unhealthy service instance is registered"
-        consulCluster.registerInstanceLackingPortNumber("my-service", "dc1", "node1-dc1")
+        consulCluster.registerInstanceLackingPortNumber("my-service", GIVEN_DC, GIVEN_NODE)
 
         and: "healthy service instance is registered"
-        consulCluster.registerHealthyServiceInstance("my-service", "dc1", "node1-dc1", ["tag1", "tag2"])
+        consulCluster.registerHealthyServiceInstance("my-service", GIVEN_DC, GIVEN_NODE, ["tag1", "tag2"])
 
         then: "watcher caught new state with only healthy service instance"
         new PollingConditions(timeout: 10).eventually {

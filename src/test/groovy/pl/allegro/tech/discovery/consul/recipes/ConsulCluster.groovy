@@ -4,8 +4,6 @@ import com.ecwid.consul.v1.Response
 import com.ecwid.consul.v1.agent.AgentConsulClient
 import com.ecwid.consul.v1.agent.model.NewService
 import com.ecwid.consul.v1.agent.model.Service
-import com.google.common.collect.ArrayListMultimap
-import com.google.common.collect.Multimap
 import com.pszymczyk.consul.ConsulPorts
 import com.pszymczyk.consul.ConsulStarterBuilder
 import com.pszymczyk.consul.infrastructure.Ports
@@ -91,7 +89,13 @@ class ConsulCluster extends ExternalResource {
         client.agentServiceDeregister(serviceId)
     }
 
-    Response<Map<String, Service>> findAllServices(String dc, String nodeName){
+    void deregisterAllServices(String dc, String nodeName) {
+        findAllServices(dc, nodeName).getValue().forEach { key, val ->
+            deregisterService(key, dc, nodeName)
+        }
+    }
+
+    private Response<Map<String, Service>> findAllServices(String dc, String nodeName) {
         def client = new AgentConsulClient("localhost", getHttpPort(dc, nodeName))
         return client.getAgentServices()
     }
