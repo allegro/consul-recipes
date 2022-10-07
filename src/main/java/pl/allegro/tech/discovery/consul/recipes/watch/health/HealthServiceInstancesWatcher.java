@@ -51,8 +51,8 @@ public class HealthServiceInstancesWatcher extends EndpointWatcher<ServiceInstan
 
             List<ServiceInstance> instances = services.stream()
                     .map(props -> {
-                        Map<String, ?> service = requiredValue(props, "Service", Map.class);
                         try {
+                            Map<String, ?> service = requiredValue(props, "Service", Map.class);
                             return new ServiceInstance(
                                     requiredValue(service, "ID", String.class),
                                     requiredValue(service, "Tags", List.class),
