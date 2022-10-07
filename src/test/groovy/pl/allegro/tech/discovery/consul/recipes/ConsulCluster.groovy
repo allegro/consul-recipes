@@ -72,6 +72,18 @@ class ConsulCluster extends ExternalResource {
         return newService.id
     }
 
+    String registerInstanceLackingPortNumber(String name, String dc, String nodeName, List<String> tags = []) {
+        def client = new AgentConsulClient("localhost", getHttpPort(dc, nodeName))
+        def newService = new NewService()
+        newService.id = UUID.randomUUID().toString()
+        newService.name = name
+        newService.address = "localhost"
+        newService.tags = tags
+        client.agentServiceRegister(newService)
+
+        return newService.id
+    }
+
     void deregisterService(String serviceId, String dc, String nodeName) {
         def client = new AgentConsulClient("localhost", getHttpPort(dc, nodeName))
         client.agentServiceDeregister(serviceId)
@@ -97,6 +109,7 @@ class ConsulCluster extends ExternalResource {
             Map<NodeKey, ConsulResource> resources = nodeKeys.collectEntries { nodeKey ->
                 [(nodeKey): new ConsulResource(ConsulStarterBuilder.consulStarter()
                         .withConsulPorts(portsForNodes[nodeKey])
+                        .withConsulVersion("1.10.12")
                         .withCustomConfig("""
                         {
                             "node_name": "${nodeKey.name}",

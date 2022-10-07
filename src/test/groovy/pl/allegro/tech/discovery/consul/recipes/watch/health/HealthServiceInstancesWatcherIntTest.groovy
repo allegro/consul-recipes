@@ -34,13 +34,13 @@ class HealthServiceInstancesWatcherIntTest extends Specification {
     private EndpointWatcher<Services> healthServiceInstancesWatcher = recipes.healthServiceInstancesWatcher("my-service",
             recipes.consulWatcher(Executors.newFixedThreadPool(1))
                     .withBackoff(100, 1000)
-                    .build())
+                    .build()) as EndpointWatcher<Services>
 
     def "should watch only healthy services"() {
         given: "watcher on my-service details"
         Deque<ServiceInstances> latestState = new ArrayDeque<>()
         healthServiceInstancesWatcher.watch(
-                { latestState.push(it.body) },
+                { latestState.push(it.body as ServiceInstances) },
                 { logger.error("Error while watching", it) })
 
         expect: "watcher caught first empty state of service details"
@@ -51,6 +51,36 @@ class HealthServiceInstancesWatcherIntTest extends Specification {
 
         when: "unhealthy service instance is registered"
         consulCluster.registerUnhealthyServiceInstance("my-service", "dc1", "node1-dc1")
+
+        and: "healthy service instance is registered"
+        consulCluster.registerHealthyServiceInstance("my-service", "dc1", "node1-dc1", ["tag1", "tag2"])
+
+        then: "watcher caught new state with only healthy service instance"
+        new PollingConditions(timeout: 10).eventually {
+            latestState.head().instances.size() == 1
+            def instance = latestState.head().instances.first()
+            instance.serviceId != null
+            instance.serviceAddress == "localhost"
+            instance.servicePort == 1234
+            instance.serviceTags == ["tag1", "tag2"]
+        }
+    }
+
+    def "should watch only parsable instances"() {
+        given: "watcher on my-service details"
+        Deque<ServiceInstances> latestState = new ArrayDeque<>()
+        healthServiceInstancesWatcher.watch(
+                { latestState.push(it.body as ServiceInstances) },
+                { logger.error("Error while watching", it) })
+
+        expect: "watcher caught first empty state of service details"
+        new PollingConditions(timeout: 10).eventually {
+            !latestState.empty
+            latestState.head().instances.empty
+        }
+
+        when: "unhealthy service instance is registered"
+        consulCluster.registerInstanceLackingPortNumber("my-service", "dc1", "node1-dc1")
 
         and: "healthy service instance is registered"
         consulCluster.registerHealthyServiceInstance("my-service", "dc1", "node1-dc1", ["tag1", "tag2"])
