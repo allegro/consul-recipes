@@ -55,8 +55,8 @@ class ServiceInstancesWatcherIntTest extends Specification {
             !latestState.head().instances.empty
             def instance = latestState.head().instances.first()
             instance.serviceId != null
-            instance.serviceAddress == "localhost"
-            instance.servicePort == 1234
+            instance.serviceAddress.get() == "localhost"
+            instance.servicePort.get() == 1234
             instance.serviceTags == ["tag1", "tag2"]
         }
 
