@@ -67,8 +67,8 @@ class HealthServiceInstancesWatcherIntTest extends Specification {
             latestState.head().instances.size() == 1
             def instance = latestState.head().instances.first()
             instance.serviceId != null
-            instance.serviceAddress.get() == "localhost"
-            instance.servicePort.get() == 1234
+            instance.serviceAddress == Optional.of("localhost")
+            instance.servicePort == Optional.of(1234)
             instance.serviceTags == ["tag1", "tag2"]
         }
     }
@@ -94,7 +94,7 @@ class HealthServiceInstancesWatcherIntTest extends Specification {
             latestState.head().instances.size() == 1
             def instanceWithNoPort = latestState.head().instances.first()
             instanceWithNoPort.serviceId != null
-            instanceWithNoPort.serviceAddress.get() == "localhost"
+            instanceWithNoPort.serviceAddress == Optional.of("localhost")
             !instanceWithNoPort.servicePort.isPresent()
             instanceWithNoPort.serviceTags == ["tag1", "tag2"]
         }

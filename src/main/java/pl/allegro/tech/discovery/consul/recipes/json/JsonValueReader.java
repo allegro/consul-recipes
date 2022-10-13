@@ -17,7 +17,7 @@ public class JsonValueReader {
 
 
     @SuppressWarnings("unchecked")
-    public static <T> T optionalValue(Map serviceProps, String property, Class<T> clazz) {
+    public static <T> T nullableValue(Map serviceProps, String property, Class<T> clazz) {
         Object value = serviceProps.get(property);
         if (value == null) {
             return null;

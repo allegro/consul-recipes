@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static pl.allegro.tech.discovery.consul.recipes.json.JsonValueReader.optionalValue;
+import static pl.allegro.tech.discovery.consul.recipes.json.JsonValueReader.nullableValue;
 import static pl.allegro.tech.discovery.consul.recipes.json.JsonValueReader.requiredValue;
 
 public class HealthServiceInstancesWatcher extends EndpointWatcher<ServiceInstances> {
@@ -50,9 +50,9 @@ public class HealthServiceInstancesWatcher extends EndpointWatcher<ServiceInstan
                         Map<String, ?> service = requiredValue(props, "Service", Map.class);
                         return new ServiceInstance(
                                 requiredValue(service, "ID", String.class),
-                                optionalValue(service, "Tags", List.class),
-                                optionalValue(service, "Address", String.class),
-                                optionalValue(service, "Port", Integer.class)
+                                nullableValue(service, "Tags", List.class),
+                                nullableValue(service, "Address", String.class),
+                                nullableValue(service, "Port", Integer.class)
                         );
                     })
                     .collect(Collectors.toList());
