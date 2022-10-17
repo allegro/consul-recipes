@@ -1,9 +1,9 @@
 package pl.allegro.tech.discovery.consul.recipes
 
+import com.ecwid.consul.v1.Response
 import com.ecwid.consul.v1.agent.AgentConsulClient
 import com.ecwid.consul.v1.agent.model.NewService
-import com.google.common.collect.ArrayListMultimap
-import com.google.common.collect.Multimap
+import com.ecwid.consul.v1.agent.model.Service
 import com.pszymczyk.consul.ConsulPorts
 import com.pszymczyk.consul.ConsulStarterBuilder
 import com.pszymczyk.consul.infrastructure.Ports
@@ -72,9 +72,32 @@ class ConsulCluster extends ExternalResource {
         return newService.id
     }
 
+    String registerInstanceLackingPortNumber(String name, String dc, String nodeName, List<String> tags = []) {
+        def client = new AgentConsulClient("localhost", getHttpPort(dc, nodeName))
+        def newService = new NewService()
+        newService.id = UUID.randomUUID().toString()
+        newService.name = name
+        newService.address = "localhost"
+        newService.tags = tags
+        client.agentServiceRegister(newService)
+
+        return newService.id
+    }
+
     void deregisterService(String serviceId, String dc, String nodeName) {
         def client = new AgentConsulClient("localhost", getHttpPort(dc, nodeName))
         client.agentServiceDeregister(serviceId)
+    }
+
+    void deregisterAllServices(String dc, String nodeName) {
+        findAllServices(dc, nodeName).getValue().forEach { key, val ->
+            deregisterService(key, dc, nodeName)
+        }
+    }
+
+    private Response<Map<String, Service>> findAllServices(String dc, String nodeName) {
+        def client = new AgentConsulClient("localhost", getHttpPort(dc, nodeName))
+        return client.getAgentServices()
     }
 
     static class Builder {
@@ -97,6 +120,7 @@ class ConsulCluster extends ExternalResource {
             Map<NodeKey, ConsulResource> resources = nodeKeys.collectEntries { nodeKey ->
                 [(nodeKey): new ConsulResource(ConsulStarterBuilder.consulStarter()
                         .withConsulPorts(portsForNodes[nodeKey])
+                        .withConsulVersion("1.10.12")
                         .withCustomConfig("""
                         {
                             "node_name": "${nodeKey.name}",

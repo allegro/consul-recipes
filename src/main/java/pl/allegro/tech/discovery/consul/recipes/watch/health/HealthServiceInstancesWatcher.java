@@ -6,13 +6,13 @@ import pl.allegro.tech.discovery.consul.recipes.watch.ConsulWatcher;
 import pl.allegro.tech.discovery.consul.recipes.watch.EndpointWatcher;
 import pl.allegro.tech.discovery.consul.recipes.watch.catalog.ServiceInstance;
 import pl.allegro.tech.discovery.consul.recipes.watch.catalog.ServiceInstances;
-import pl.allegro.tech.discovery.consul.recipes.watch.catalog.ServiceInstancesWatcher;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static pl.allegro.tech.discovery.consul.recipes.json.JsonValueReader.nullableValue;
 import static pl.allegro.tech.discovery.consul.recipes.json.JsonValueReader.requiredValue;
 
 public class HealthServiceInstancesWatcher extends EndpointWatcher<ServiceInstances> {
@@ -50,9 +50,9 @@ public class HealthServiceInstancesWatcher extends EndpointWatcher<ServiceInstan
                         Map<String, ?> service = requiredValue(props, "Service", Map.class);
                         return new ServiceInstance(
                                 requiredValue(service, "ID", String.class),
-                                requiredValue(service, "Tags", List.class),
-                                requiredValue(service, "Address", String.class),
-                                requiredValue(service, "Port", Integer.class)
+                                nullableValue(service, "Tags", List.class),
+                                nullableValue(service, "Address", String.class),
+                                nullableValue(service, "Port", Integer.class)
                         );
                     })
                     .collect(Collectors.toList());

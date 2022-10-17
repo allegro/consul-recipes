@@ -1,17 +1,19 @@
 package pl.allegro.tech.discovery.consul.recipes.watch.catalog;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class ServiceInstance {
     private final String serviceId;
     private final List<String> serviceTags;
     private final String serviceAddress;
-    private final int servicePort;
+    private final Integer servicePort;
 
-    public ServiceInstance(String serviceId, List<String> serviceTags, String serviceAddress, int servicePort) {
+    public ServiceInstance(String serviceId, List<String> serviceTags, String serviceAddress, Integer servicePort) {
         this.serviceId = serviceId;
-        this.serviceTags = serviceTags;
+        this.serviceTags = serviceTags != null ? serviceTags : Collections.emptyList();
         this.serviceAddress = serviceAddress;
         this.servicePort = servicePort;
     }
@@ -24,12 +26,12 @@ public class ServiceInstance {
         return serviceTags;
     }
 
-    public String getServiceAddress() {
-        return serviceAddress;
+    public Optional<String> getServiceAddress() {
+        return Optional.ofNullable(serviceAddress);
     }
 
-    public int getServicePort() {
-        return servicePort;
+    public Optional<Integer> getServicePort() {
+        return Optional.ofNullable(servicePort);
     }
 
     @Override
