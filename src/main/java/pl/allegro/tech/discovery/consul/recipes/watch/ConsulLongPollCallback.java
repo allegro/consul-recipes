@@ -113,6 +113,7 @@ class ConsulLongPollCallback implements Callback {
             }
             reconnectAfterSuccessfulResponse();
         } catch (IOException exception) {
+            logger.error("DUPA DUPA");
             handleSucessfulResponseProcessingException(exception);
         }
     }
@@ -205,6 +206,6 @@ class ConsulLongPollCallback implements Callback {
 
     long reconnectWithBackoff() {
         return backoffRunner.runWithBackoff(retryCount.getAndIncrement(), () ->
-                reconnect.reconnect(endpoint, currentIndex.get(), this));
+                reconnect.reconnect(endpoint, 0, this));
     }
 }

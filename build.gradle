@@ -61,7 +61,7 @@ dependencies {
 
     testImplementation group: 'org.awaitility', name: 'awaitility', version: '2.0.0'
     testImplementation group: 'org.awaitility', name: 'awaitility-groovy', version: '2.0.0'
-    testImplementation group: 'com.github.tomakehurst', name: 'wiremock', version: '2.21.0'
+    testImplementation group: 'com.github.tomakehurst', name: 'wiremock-jre8', version: '2.35.0'
 
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'

@@ -1,7 +1,9 @@
 package pl.allegro.tech.discovery.consul.recipes.watch
 
+import com.github.tomakehurst.wiremock.admin.model.ScenarioState
 import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.junit.WireMockRule
+import com.github.tomakehurst.wiremock.stubbing.Scenario
 import org.awaitility.Duration
 import org.junit.ClassRule
 import org.slf4j.Logger
@@ -42,22 +44,22 @@ class ConsulWatcherTest extends Specification {
                 .withQueryParam('index', equalTo('0'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '123')
-                .withBody('123')))
+                        .withHeader('X-Consul-Index', '123')
+                        .withBody('123')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('123'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '126')
-                .withBody('126')))
+                        .withHeader('X-Consul-Index', '126')
+                        .withBody('126')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('126'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                .withHeader('X-Consul-Index', '126')
-                .withBody('finalize')))
+                        .withHeader('X-Consul-Index', '126')
+                        .withBody('finalize')))
 
         def consumedMessages = []
         def consumer = { consumedMessages += it.body }
@@ -75,29 +77,29 @@ class ConsulWatcherTest extends Specification {
                 .withQueryParam('index', equalTo('0'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '123')
-                .withBody('123')))
+                        .withHeader('X-Consul-Index', '123')
+                        .withBody('123')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('123'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '126')
-                .withBody('126')))
+                        .withHeader('X-Consul-Index', '126')
+                        .withBody('126')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('126'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '127')
-                .withBody('126')))
+                        .withHeader('X-Consul-Index', '127')
+                        .withBody('126')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('127'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                .withHeader('X-Consul-Index', '127')
-                .withBody('finalize')))
+                        .withHeader('X-Consul-Index', '127')
+                        .withBody('finalize')))
 
         def consumedMessages = []
         def consumer = { consumedMessages += it.body }
@@ -115,29 +117,29 @@ class ConsulWatcherTest extends Specification {
                 .withQueryParam('index', equalTo('0'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '123')
-                .withBody('123')))
+                        .withHeader('X-Consul-Index', '123')
+                        .withBody('123')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('123'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '126')
-                .withBody('126')))
+                        .withHeader('X-Consul-Index', '126')
+                        .withBody('126')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('126'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '126')
-                .withBody('index did not change')))
+                        .withHeader('X-Consul-Index', '126')
+                        .withBody('index did not change')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('127'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                .withHeader('X-Consul-Index', '127')
-                .withBody('finalize')))
+                        .withHeader('X-Consul-Index', '127')
+                        .withBody('finalize')))
 
         def consumedMessages = []
         def consumer = { consumedMessages += it.body }
@@ -156,15 +158,15 @@ class ConsulWatcherTest extends Specification {
                 .withQueryParam('index', equalTo('0'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '123')
-                .withBody('123')))
+                        .withHeader('X-Consul-Index', '123')
+                        .withBody('123')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('123'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                .withHeader('X-Consul-Index', '126')
-                .withBody('finalize')))
+                        .withHeader('X-Consul-Index', '126')
+                        .withBody('finalize')))
 
         def consumedMessages = []
         def consumer = { consumedMessages += it.body }
@@ -182,21 +184,21 @@ class ConsulWatcherTest extends Specification {
                 .withQueryParam('index', equalTo('0'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withBody('error')))
+                        .withBody('error')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('0'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '127')
-                .withBody('success')))
+                        .withHeader('X-Consul-Index', '127')
+                        .withBody('success')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('127'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                .withHeader('X-Consul-Index', '127')
-                .withBody('success')))
+                        .withHeader('X-Consul-Index', '127')
+                        .withBody('success')))
 
         def consumedMessages = []
         def consumer = { consumedMessages += it.body }
@@ -208,25 +210,70 @@ class ConsulWatcherTest extends Specification {
         await().atMost(Duration.FIVE_SECONDS).until({ consumedMessages == ['success'] })
     }
 
+    def "should reset index on failure"() {
+        given:
+        consul.resetAll()
+        consul.stubFor(get(urlPathEqualTo('/endpoint'))
+                .inScenario("reset_index")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .withQueryParam('index', equalTo('0'))
+                .withQueryParam('wait', equalTo('5m'))
+                .willReturn(aResponse()
+                        .withHeader('X-Consul-Index', '1')
+                        .withBody('before-error')))
+
+        consul.stubFor(get(urlPathEqualTo('/endpoint'))
+                .inScenario("reset_index")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .withQueryParam('index', equalTo('1'))
+                .withQueryParam('wait', equalTo('5m'))
+                .willReturn(aResponse()
+                        .withFixedDelay(1000)
+                        .withFault(Fault.CONNECTION_RESET_BY_PEER))
+                .willSetStateTo("AFTER_ERROR")
+        )
+
+
+        consul.stubFor(get(urlPathEqualTo('/endpoint'))
+                .inScenario("reset_index")
+                .whenScenarioStateIs("AFTER_ERROR")
+                .withQueryParam('index', equalTo('0'))
+                .withQueryParam('wait', equalTo('5m'))
+                .willReturn(aResponse()
+                        .withHeader('X-Consul-Index', '2')
+                        .withBody('after-error')))
+
+        def consumedMessages = []
+        def consumer = { consumedMessages += it.body }
+
+        when:
+        watcher.watchEndpoint('/endpoint', consumer, { logger.error("Error while watching", it) })
+
+        then:
+        await().atMost(Duration.FIVE_SECONDS).until({
+            consumedMessages == ['before-error', 'after-error']
+        })
+    }
+
     def "should reconnect after receiving garbage"() {
         given:
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('0'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(aResponse()
-                .withFault(Fault.RANDOM_DATA_THEN_CLOSE)))
+                        .withFault(Fault.RANDOM_DATA_THEN_CLOSE)))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('0'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '1')
-                .withBody('success')))
+                        .withHeader('X-Consul-Index', '1')
+                        .withBody('success')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam('index', equalTo('1'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                .withHeader('X-Consul-Index', '2')
-                .withBody('success')))
+                        .withHeader('X-Consul-Index', '2')
+                        .withBody('success')))
 
         def consumedMessages = []
         def consumer = { consumedMessages += it.body }
@@ -245,10 +292,10 @@ class ConsulWatcherTest extends Specification {
                 .withQueryParam('index', equalTo('0'))
                 .withQueryParam('wait', equalTo('5m'))
                 .willReturn(
-                    aResponse()
-                            .withStatus(errorCode)
-                            .withHeader('X-Consul-Index', '0')
-                            .withBody("Access denied")
+                        aResponse()
+                                .withStatus(errorCode)
+                                .withHeader('X-Consul-Index', '0')
+                                .withBody("Access denied")
                 )
         )
 
@@ -275,16 +322,16 @@ class ConsulWatcherTest extends Specification {
 
         consul.stubFor(get(urlPathEqualTo('/cancel'))
                 .willReturn(aResponse()
-                .withHeader('X-Consul-Index', '123')
-                .withFixedDelay(100)
-                .withBody('123')))
+                        .withHeader('X-Consul-Index', '123')
+                        .withFixedDelay(100)
+                        .withBody('123')))
 
         when:
         def canceller = watcher
                 .watchEndpoint("/cancel", { it -> first += 1 }, { it -> first += 1 })
 
         def canceller2 = watcher
-                .watchEndpoint("/cancel", { it -> second += 1}, { it -> second += 1})
+                .watchEndpoint("/cancel", { it -> second += 1 }, { it -> second += 1 })
 
         canceller.cancel()
 
