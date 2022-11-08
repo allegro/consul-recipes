@@ -1,6 +1,5 @@
 package pl.allegro.tech.discovery.consul.recipes.watch
 
-import com.github.tomakehurst.wiremock.admin.model.ScenarioState
 import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomakehurst.wiremock.stubbing.Scenario
@@ -317,8 +316,7 @@ class ConsulWatcherTest extends Specification {
 
     def "should not invoke callbacks for disposed watch"() {
         given:
-        def first = 0
-        def second = 0
+        def counter = 0
 
         consul.stubFor(get(urlPathEqualTo('/cancel'))
                 .willReturn(aResponse()
@@ -328,22 +326,15 @@ class ConsulWatcherTest extends Specification {
 
         when:
         def canceller = watcher
-                .watchEndpoint("/cancel", { it -> first += 1 }, { it -> first += 1 })
+                .watchEndpoint("/cancel", { it -> counter += 1}, { it -> counter += 1 })
 
-        def canceller2 = watcher
-                .watchEndpoint("/cancel", { it -> second += 1 }, { it -> second += 1 })
-
+        def beforeCancel = counter
         canceller.cancel()
+        Thread.sleep(2000)
+        def afterCancel = counter
 
         then:
-        await().until({
-            verify(exactly(2), getRequestedFor(urlPathEqualTo("/cancel")))
-            canceller2.cancel()
-            true
-        })
-
-        first == 0
-        second == 1
+        beforeCancel == afterCancel
     }
 
 }
