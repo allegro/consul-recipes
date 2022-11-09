@@ -205,7 +205,8 @@ class ConsulLongPollCallback implements Callback {
     }
 
     long reconnectWithBackoff() {
+        currentIndex.set(0);
         return backoffRunner.runWithBackoff(retryCount.getAndIncrement(), () ->
-                reconnect.reconnect(endpoint, 0, this));
+                reconnect.reconnect(endpoint, currentIndex.get(), this));
     }
 }
