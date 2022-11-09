@@ -211,7 +211,6 @@ class ConsulWatcherTest extends Specification {
 
     def "should reset index on failure"() {
         given:
-        consul.resetAll()
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .inScenario("reset_index")
                 .whenScenarioStateIs(Scenario.STARTED)
