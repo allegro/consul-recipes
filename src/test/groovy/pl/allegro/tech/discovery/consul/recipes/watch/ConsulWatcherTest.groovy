@@ -329,11 +329,12 @@ class ConsulWatcherTest extends Specification {
 
         def beforeCancel = counter
         canceller.cancel()
-        Thread.sleep(2000)
-        def afterCancel = counter
 
         then:
-        beforeCancel == afterCancel
+        await().pollDelay(Duration.FIVE_SECONDS).until({
+            canceller.isCancelled()
+            beforeCancel == counter
+        })
     }
 
 }
