@@ -133,7 +133,6 @@ class ConsulLongPollCallback implements Callback {
                 logNonOkHttpResponseWithBody(response, backoff, body.string());
             } catch (IOException e) {
                 logNonOkHttpResponseWithException(response, backoff, e);
-
             }
         });
     }
@@ -193,9 +192,16 @@ class ConsulLongPollCallback implements Callback {
         }
 
         long index = Long.valueOf(indexString);
-        if (currentIndex.get() == index) {
+        long lastIndex = currentIndex.get();
+
+        if (index == lastIndex) {
             stats.indexNotChanged();
             logger.trace("Discarding event on endpoint {} index {} as index did not change", endpoint, index);
+            return -1;
+        } else if (index < lastIndex) {
+            stats.indexBackwards();
+            logger.warn("Discarding event on endpoint {} as new index index {} is lower than previous {} - resetting index", endpoint, index, lastIndex);
+            currentIndex.set(0);
             return -1;
         } else {
             currentIndex.set(index);

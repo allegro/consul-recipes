@@ -150,6 +150,48 @@ class ConsulWatcherTest extends Specification {
         await().atMost(Duration.FIVE_SECONDS).until({ consumedMessages == ['123', '126'] })
     }
 
+
+    def "should discard message and reset index if it went backwards"() {
+        given:
+        consul.stubFor(get(urlPathEqualTo('/endpoint'))
+                .inScenario("index_backwards")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .withQueryParam('index', equalTo('0'))
+                .withQueryParam('wait', equalTo('5m'))
+                .willReturn(aResponse()
+                        .withHeader('X-Consul-Index', '123')
+                        .withBody('123')))
+
+        consul.stubFor(get(urlPathEqualTo('/endpoint'))
+                .inScenario("index backwards")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .withQueryParam('index', equalTo('123'))
+                .withQueryParam('wait', equalTo('5m'))
+                .willReturn(aResponse()
+                        .withHeader('X-Consul-Index', '120')
+                        .withBody('120'))
+                .willSetStateTo('after rewind'))
+
+        consul.stubFor(get(urlPathEqualTo('/endpoint'))
+                .inScenario('index backwards')
+                .whenScenarioStateIs('after rewind')
+                .withQueryParam('index', equalTo('0'))
+                .withQueryParam('wait', equalTo('5m'))
+                .willReturn(aResponse()
+                        .withHeader('X-Consul-Index', '126')
+                        .withBody('126')))
+
+        def consumedMessages = []
+        def consumer = { consumedMessages += it.body }
+
+        when:
+        watcher.watchEndpoint('/endpoint', consumer, { logger.error("Error while watching", it) })
+
+        then:
+        await().atMost(Duration.FIVE_SECONDS).until({ consumedMessages == ['123', '126'] })
+    }
+
+
     def "should accept endpoints with query parameters"() {
         given:
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
