@@ -20,6 +20,13 @@ import java.util.function.Consumer;
 
 class ConsulLongPollCallback implements Callback {
 
+    enum UpdateIndexStatus {
+        UPDATED,
+        UNCHANGED,
+        ERROR,
+        RESET
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(ConsulLongPollCallback.class);
 
     private final ExecutorService workerPool;
@@ -98,19 +105,21 @@ class ConsulLongPollCallback implements Callback {
     private void onSuccessfulResponse(Call call, Response response) {
         stats.eventReceived();
         try (ResponseBody body = response.body()) {
-            long index = updateIndex(response);
-            if (index >= 0) {
-                logger.trace("Long poll returned with a result on endpoint {} with index {}",
-                        call.request().url(), index);
-                byte[] content = body.bytes();
-                if (contentChanged(content)) {
-                    handleContentChanged(call, index, content);
-                } else {
-                    handleContentUnchanged(index);
-                }
-            } else {
-                handleContentUnchanged(index);
+            switch (updateIndex(response)) {
+                case UPDATED:
+                    byte[] content = body.bytes();
+                    if (contentChanged(content)) {
+                        handleContentChanged(content);
+                    } else {
+                        handleContentUnchanged();
+                    }
+                    break;
+
+                case UNCHANGED:
+                    handleContentUnchanged();
+                    break;
             }
+
             reconnectAfterSuccessfulResponse();
         } catch (IOException exception) {
             handleSucessfulResponseProcessingException(exception);
@@ -149,19 +158,21 @@ class ConsulLongPollCallback implements Callback {
         );
     }
 
-    private void handleContentChanged(Call call, long index, byte[] content) {
+    private void handleContentChanged(byte[] content) {
         stats.callbackCalled();
+        long index = currentIndex.get();
         if (logger.isTraceEnabled()) {
             logger.trace("Dispatching work on endpoint {} index {} to worker, text: {}",
-                    call.request().url(), index, new String(content, StandardCharsets.UTF_8));
+                    endpoint, index, new String(content, StandardCharsets.UTF_8));
         }
         workerPool.submit(() -> consumer.accept(new WatchResult<>(index, new String(content, StandardCharsets.UTF_8))));
     }
 
-    private void handleContentUnchanged(long index) {
+    private void handleContentUnchanged() {
         stats.contentNotChanged();
-        logger.trace("Discarding event on endpoint {} index {} as content did not change", endpoint, index);
+        logger.trace("Discarding event on endpoint {} index {} as content did not change", endpoint, currentIndex.get());
     }
+
 
     private void logNonOkHttpResponseWithException(Response response, long backoff, IOException e) {
         logger.error(
@@ -184,11 +195,11 @@ class ConsulLongPollCallback implements Callback {
         return !Arrays.equals(oldContent, newContent);
     }
 
-    private long updateIndex(Response response) {
+    private UpdateIndexStatus updateIndex(Response response) {
         String indexString = response.header("X-Consul-Index");
         if (indexString == null) {
             logger.error("There was no X-Consul-Index header in response for {} endpoint, retrying", endpoint);
-            return -1;
+            return UpdateIndexStatus.ERROR;
         }
 
         long index = Long.valueOf(indexString);
@@ -196,16 +207,15 @@ class ConsulLongPollCallback implements Callback {
 
         if (index == lastIndex) {
             stats.indexNotChanged();
-            logger.trace("Discarding event on endpoint {} index {} as index did not change", endpoint, index);
-            return -1;
+            return UpdateIndexStatus.UNCHANGED;
         } else if (index < lastIndex) {
             stats.indexBackwards();
             logger.warn("Discarding event on endpoint {} as new index index {} is lower than previous {} - resetting index", endpoint, index, lastIndex);
             currentIndex.set(0);
-            return -1;
+            return UpdateIndexStatus.RESET;
         } else {
             currentIndex.set(index);
-            return index;
+            return UpdateIndexStatus.UPDATED;
         }
     }
 
