@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,7 +24,6 @@ class ConsulLongPollCallback implements Callback {
     enum UpdateIndexStatus {
         UPDATED,
         UNCHANGED,
-        ERROR,
         RESET
     }
 
@@ -41,7 +41,7 @@ class ConsulLongPollCallback implements Callback {
 
     private final BackoffRunner backoffRunner;
 
-    private AtomicReference<byte[]> lastValue = new AtomicReference<>(new byte[]{0});
+    private final AtomicReference<byte[]> lastValue = new AtomicReference<>(new byte[]{0});
 
     private final AtomicLong currentIndex = new AtomicLong(0);
 
@@ -105,24 +105,42 @@ class ConsulLongPollCallback implements Callback {
     private void onSuccessfulResponse(Call call, Response response) {
         stats.eventReceived();
         try (ResponseBody body = response.body()) {
-            switch (updateIndex(response)) {
-                case UPDATED:
-                    byte[] content = body.bytes();
-                    if (contentChanged(content)) {
-                        handleContentChanged(content);
-                    } else {
-                        handleContentUnchanged();
-                    }
-                    break;
-
-                case UNCHANGED:
-                    handleContentUnchanged();
-                    break;
+            Optional<String> consulIndexHeaderValue = Optional.ofNullable(response.header("X-Consul-Index"));
+            if (consulIndexHeaderValue.isPresent()) {
+                long newIndexValue = Long.parseLong(consulIndexHeaderValue.get());
+                handleIndexUpdate(body, newIndexValue);
+            } else {
+                logger.error("There was no X-Consul-Index header in response for {} endpoint, retrying", endpoint);
             }
 
             reconnectAfterSuccessfulResponse();
         } catch (IOException exception) {
             handleSucessfulResponseProcessingException(exception);
+        }
+    }
+
+    private void handleIndexUpdate(ResponseBody body, long newIndexValue) throws IOException {
+        switch (defineIndexUpdateStatus(newIndexValue)) {
+            case UPDATED:
+                currentIndex.set(newIndexValue);
+                byte[] content = body.bytes();
+                if (contentChanged(content)) {
+                    handleContentChanged(content);
+                } else {
+                    handleContentUnchanged();
+                }
+                break;
+
+            case UNCHANGED:
+                stats.indexNotChanged();
+                handleContentUnchanged();
+                break;
+
+            case RESET:
+                stats.indexBackwards();
+                logger.warn("Discarding event on endpoint {} as new index index {} is lower than previous {} - resetting index", endpoint, newIndexValue, currentIndex.get());
+                currentIndex.set(0);
+                break;
         }
     }
 
@@ -195,26 +213,13 @@ class ConsulLongPollCallback implements Callback {
         return !Arrays.equals(oldContent, newContent);
     }
 
-    private UpdateIndexStatus updateIndex(Response response) {
-        String indexString = response.header("X-Consul-Index");
-        if (indexString == null) {
-            logger.error("There was no X-Consul-Index header in response for {} endpoint, retrying", endpoint);
-            return UpdateIndexStatus.ERROR;
-        }
-
-        long index = Long.valueOf(indexString);
-        long lastIndex = currentIndex.get();
-
-        if (index == lastIndex) {
-            stats.indexNotChanged();
+    private UpdateIndexStatus defineIndexUpdateStatus(long newIndexValue) {
+        long previousIndexValue = currentIndex.get();
+        if (newIndexValue == previousIndexValue) {
             return UpdateIndexStatus.UNCHANGED;
-        } else if (index < lastIndex) {
-            stats.indexBackwards();
-            logger.warn("Discarding event on endpoint {} as new index index {} is lower than previous {} - resetting index", endpoint, index, lastIndex);
-            currentIndex.set(0);
+        } else if (newIndexValue < previousIndexValue) {
             return UpdateIndexStatus.RESET;
         } else {
-            currentIndex.set(index);
             return UpdateIndexStatus.UPDATED;
         }
     }
