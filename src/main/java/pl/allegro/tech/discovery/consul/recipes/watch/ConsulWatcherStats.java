@@ -16,6 +16,9 @@ public class ConsulWatcherStats {
 
     private final AtomicLong indexBackwardsEvents = new AtomicLong(0);
 
+    private final AtomicLong indexMissingEvents = new AtomicLong(0);
+
+
     private final AtomicLong failures = new AtomicLong(0);
 
     private final RecentCounter recentFailures;
@@ -46,6 +49,9 @@ public class ConsulWatcherStats {
 
     void indexBackwards() { indexBackwardsEvents.incrementAndGet(); }
 
+    void indexMissing() { indexMissingEvents.incrementAndGet(); }
+
+
     void failed() {
         failures.incrementAndGet();
         recentFailures.increment();
@@ -69,6 +75,10 @@ public class ConsulWatcherStats {
 
     public long getIndexBackwardsEvents() {
         return indexBackwardsEvents.get();
+    }
+
+    public long getIndexMissingEvents() {
+        return indexMissingEvents.get();
     }
 
 
