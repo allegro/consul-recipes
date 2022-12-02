@@ -163,6 +163,7 @@ class ConsulLongPollCallback implements Callback {
         stats.indexNotChanged();
         logger.trace("Discarding event on endpoint {} index {} as index did not change", endpoint, index);
     }
+
     private void handleIndexBackwards(long lastIndex, long newIndex) {
         stats.indexBackwards();
         logger.warn(
