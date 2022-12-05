@@ -104,7 +104,7 @@ class ConsulLongPollCallback implements Callback {
                 logger.error("There was no X-Consul-Index header in response for {} endpoint, retrying", endpoint);
             } else {
                 long newIndex = Long.parseLong(indexString);
-                handleUpdate(newIndex, body);
+                updateIndexAndProcessEvent(newIndex, body);
             }
 
             reconnectAfterSuccessfulResponse();
@@ -166,10 +166,21 @@ class ConsulLongPollCallback implements Callback {
 
     private void handleIndexBackwards(long lastIndex, long newIndex) {
         stats.indexBackwards();
+        currentIndex.set(0);
         logger.warn(
                 "Resetting index and discarding event on endpoint {} as new index index {} is lower than previous {}",
                 endpoint, newIndex, lastIndex
         );
+    }
+
+    private void handleIndexForward(long newIndex, ResponseBody body) throws IOException {
+        currentIndex.set(newIndex);
+        byte[] content = body.bytes();
+        if (contentChanged(content)) {
+            handleContentChanged(newIndex, content);
+        } else {
+            handleContentUnchanged(newIndex);
+        }
     }
 
     private void logNonOkHttpResponseWithException(Response response, long backoff, IOException e) {
@@ -193,23 +204,15 @@ class ConsulLongPollCallback implements Callback {
         return !Arrays.equals(oldContent, newContent);
     }
 
-    private void handleUpdate(long newIndex, ResponseBody body) throws IOException {
-        // update index and process content
+    private void updateIndexAndProcessEvent(long newIndex, ResponseBody body) throws IOException {
         long lastIndex = currentIndex.get();
 
         if (newIndex == lastIndex) {
             handleIndexNotChanged(newIndex);
-        } else if (newIndex < lastIndex) { // index backwards -> reset
-            currentIndex.set(0);
+        } else if (newIndex < lastIndex) {
             handleIndexBackwards(lastIndex, newIndex);
-        } else { // index moving forward
-            currentIndex.set(newIndex);
-            byte[] content = body.bytes();
-            if (contentChanged(content)) {
-                handleContentChanged(newIndex, content);
-            } else {
-                handleContentUnchanged(newIndex);
-            }
+        } else {
+            handleIndexForward(newIndex, body);
         }
     }
 

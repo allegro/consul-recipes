@@ -18,7 +18,6 @@ public class ConsulWatcherStats {
 
     private final AtomicLong indexMissingEvents = new AtomicLong(0);
 
-
     private final AtomicLong failures = new AtomicLong(0);
 
     private final RecentCounter recentFailures;
@@ -51,7 +50,6 @@ public class ConsulWatcherStats {
 
     void indexMissing() { indexMissingEvents.incrementAndGet(); }
 
-
     void failed() {
         failures.incrementAndGet();
         recentFailures.increment();
@@ -80,7 +78,6 @@ public class ConsulWatcherStats {
     public long getIndexMissingEvents() {
         return indexMissingEvents.get();
     }
-
 
     public long getFailures() {
         return failures.get();
