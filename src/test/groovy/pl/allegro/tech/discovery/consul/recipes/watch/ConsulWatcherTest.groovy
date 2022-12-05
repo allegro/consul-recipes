@@ -19,7 +19,11 @@ import static org.awaitility.Awaitility.await
 
 class ConsulWatcherTest extends Specification {
 
-    static Logger logger = LoggerFactory.getLogger(ConsulWatcherTest)
+    private static Logger logger = LoggerFactory.getLogger(ConsulWatcherTest)
+
+    private static final String CONSUL_INDEX_HEADER = 'X-Consul-Index'
+    private static final String QUERY_PARAM_WAIT = 'wait'
+    private static final String QUERY_PARAM_INDEX = 'index'
 
     @ClassRule
     @Shared
@@ -40,24 +44,24 @@ class ConsulWatcherTest extends Specification {
     def "should react to consecutive changes on given endpoint"() {
         given:
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '123')
+                        .withHeader(CONSUL_INDEX_HEADER, '123')
                         .withBody('123')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('123'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('123'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '126')
+                        .withHeader(CONSUL_INDEX_HEADER, '126')
                         .withBody('126')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('126'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('126'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                        .withHeader('X-Consul-Index', '126')
+                        .withHeader(CONSUL_INDEX_HEADER, '126')
                         .withBody('finalize')))
 
         def consumedMessages = []
@@ -73,31 +77,31 @@ class ConsulWatcherTest extends Specification {
     def "should not run callback if the content did not change"() {
         given:
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '123')
+                        .withHeader(CONSUL_INDEX_HEADER, '123')
                         .withBody('123')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('123'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('123'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '126')
+                        .withHeader(CONSUL_INDEX_HEADER, '126')
                         .withBody('126')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('126'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('126'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '127')
+                        .withHeader(CONSUL_INDEX_HEADER, '127')
                         .withBody('126')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('127'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('127'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                        .withHeader('X-Consul-Index', '127')
+                        .withHeader(CONSUL_INDEX_HEADER, '127')
                         .withBody('finalize')))
 
         def consumedMessages = []
@@ -113,31 +117,31 @@ class ConsulWatcherTest extends Specification {
     def "should not call callback if X-Consul-Index did not change"() {
         given:
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '123')
+                        .withHeader(CONSUL_INDEX_HEADER, '123')
                         .withBody('123')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('123'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('123'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '126')
+                        .withHeader(CONSUL_INDEX_HEADER, '126')
                         .withBody('126')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('126'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('126'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '126')
+                        .withHeader(CONSUL_INDEX_HEADER, '126')
                         .withBody('index did not change')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('127'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('127'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                        .withHeader('X-Consul-Index', '127')
+                        .withHeader(CONSUL_INDEX_HEADER, '127')
                         .withBody('finalize')))
 
         def consumedMessages = []
@@ -155,38 +159,38 @@ class ConsulWatcherTest extends Specification {
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .inScenario("index_backwards")
                 .whenScenarioStateIs(Scenario.STARTED)
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '123')
+                        .withHeader(CONSUL_INDEX_HEADER, '123')
                         .withBody('123')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .inScenario("index backwards")
                 .whenScenarioStateIs(Scenario.STARTED)
-                .withQueryParam('index', equalTo('123'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('123'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '120')
+                        .withHeader(CONSUL_INDEX_HEADER, '120')
                         .withBody('120'))
                 .willSetStateTo('after rewind'))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .inScenario('index backwards')
                 .whenScenarioStateIs('after rewind')
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '126')
+                        .withHeader(CONSUL_INDEX_HEADER, '126')
                         .withBody('126')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .inScenario('index backwards')
                 .whenScenarioStateIs('after rewind')
-                .withQueryParam('index', equalTo('126'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('126'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                        .withHeader('X-Consul-Index', '127')
+                        .withHeader(CONSUL_INDEX_HEADER, '127')
                         .withBody('finalize')))
 
         def consumedMessages = []
@@ -203,17 +207,17 @@ class ConsulWatcherTest extends Specification {
         given:
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .withQueryParam("someParam", equalTo("something"))
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '123')
+                        .withHeader(CONSUL_INDEX_HEADER, '123')
                         .withBody('123')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('123'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('123'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                        .withHeader('X-Consul-Index', '126')
+                        .withHeader(CONSUL_INDEX_HEADER, '126')
                         .withBody('finalize')))
 
         def consumedMessages = []
@@ -229,23 +233,23 @@ class ConsulWatcherTest extends Specification {
     def "should reconnect on failure to fetch X-Consul-Index header"() {
         given:
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
                         .withBody('error')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '127')
+                        .withHeader(CONSUL_INDEX_HEADER, '127')
                         .withBody('success')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('127'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('127'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                        .withHeader('X-Consul-Index', '127')
+                        .withHeader(CONSUL_INDEX_HEADER, '127')
                         .withBody('success')))
 
         def consumedMessages = []
@@ -263,17 +267,17 @@ class ConsulWatcherTest extends Specification {
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .inScenario("reset_index")
                 .whenScenarioStateIs(Scenario.STARTED)
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '1')
+                        .withHeader(CONSUL_INDEX_HEADER, '1')
                         .withBody('before-error')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .inScenario("reset_index")
                 .whenScenarioStateIs(Scenario.STARTED)
-                .withQueryParam('index', equalTo('1'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('1'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
                         .withFixedDelay(1000)
                         .withFault(Fault.CONNECTION_RESET_BY_PEER))
@@ -284,10 +288,10 @@ class ConsulWatcherTest extends Specification {
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
                 .inScenario("reset_index")
                 .whenScenarioStateIs("AFTER_ERROR")
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '2')
+                        .withHeader(CONSUL_INDEX_HEADER, '2')
                         .withBody('after-error')))
 
         def consumedMessages = []
@@ -305,21 +309,21 @@ class ConsulWatcherTest extends Specification {
     def "should reconnect after receiving garbage"() {
         given:
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(aResponse()
                         .withFault(Fault.RANDOM_DATA_THEN_CLOSE)))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('0'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '1')
+                        .withHeader(CONSUL_INDEX_HEADER, '1')
                         .withBody('success')))
 
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('1'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('1'))
                 .willReturn(aResponse().withFixedDelay(10000)
-                        .withHeader('X-Consul-Index', '2')
+                        .withHeader(CONSUL_INDEX_HEADER, '2')
                         .withBody('success')))
 
         def consumedMessages = []
@@ -336,12 +340,12 @@ class ConsulWatcherTest extends Specification {
     def "should reconnect with delay after receiving #errorCode http code"() {
         given: "error code is returned"
         consul.stubFor(get(urlPathEqualTo('/endpoint'))
-                .withQueryParam('index', equalTo('0'))
-                .withQueryParam('wait', equalTo('5m'))
+                .withQueryParam(QUERY_PARAM_INDEX, equalTo('0'))
+                .withQueryParam(QUERY_PARAM_WAIT, equalTo('5m'))
                 .willReturn(
                         aResponse()
                                 .withStatus(errorCode)
-                                .withHeader('X-Consul-Index', '0')
+                                .withHeader(CONSUL_INDEX_HEADER, '0')
                                 .withBody("Access denied")
                 )
         )
@@ -368,7 +372,7 @@ class ConsulWatcherTest extends Specification {
 
         consul.stubFor(get(urlPathEqualTo('/cancel'))
                 .willReturn(aResponse()
-                        .withHeader('X-Consul-Index', '123')
+                        .withHeader(CONSUL_INDEX_HEADER, '123')
                         .withFixedDelay(100)
                         .withBody('123')))
 
