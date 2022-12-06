@@ -98,19 +98,15 @@ class ConsulLongPollCallback implements Callback {
     private void onSuccessfulResponse(Call call, Response response) {
         stats.eventReceived();
         try (ResponseBody body = response.body()) {
-            long index = updateIndex(response);
-            if (index >= 0) {
-                logger.trace("Long poll returned with a result on endpoint {} with index {}",
-                        call.request().url(), index);
-                byte[] content = body.bytes();
-                if (contentChanged(content)) {
-                    handleContentChanged(call, index, content);
-                } else {
-                    handleContentUnchanged(index);
-                }
+            String indexString = response.header("X-Consul-Index");
+            if (indexString == null) {
+                stats.indexMissing();
+                logger.error("There was no X-Consul-Index header in response for {} endpoint, retrying", endpoint);
             } else {
-                handleContentUnchanged(index);
+                long newIndex = Long.parseLong(indexString);
+                updateIndexAndProcessEvent(newIndex, body);
             }
+
             reconnectAfterSuccessfulResponse();
         } catch (IOException exception) {
             handleSucessfulResponseProcessingException(exception);
@@ -133,7 +129,6 @@ class ConsulLongPollCallback implements Callback {
                 logNonOkHttpResponseWithBody(response, backoff, body.string());
             } catch (IOException e) {
                 logNonOkHttpResponseWithException(response, backoff, e);
-
             }
         });
     }
@@ -150,11 +145,11 @@ class ConsulLongPollCallback implements Callback {
         );
     }
 
-    private void handleContentChanged(Call call, long index, byte[] content) {
+    private void handleContentChanged(long index, byte[] content) {
         stats.callbackCalled();
         if (logger.isTraceEnabled()) {
             logger.trace("Dispatching work on endpoint {} index {} to worker, text: {}",
-                    call.request().url(), index, new String(content, StandardCharsets.UTF_8));
+                    endpoint, index, new String(content, StandardCharsets.UTF_8));
         }
         workerPool.submit(() -> consumer.accept(new WatchResult<>(index, new String(content, StandardCharsets.UTF_8))));
     }
@@ -162,6 +157,30 @@ class ConsulLongPollCallback implements Callback {
     private void handleContentUnchanged(long index) {
         stats.contentNotChanged();
         logger.trace("Discarding event on endpoint {} index {} as content did not change", endpoint, index);
+    }
+
+    private void handleIndexNotChanged(long index) {
+        stats.indexNotChanged();
+        logger.trace("Discarding event on endpoint {} index {} as index did not change", endpoint, index);
+    }
+
+    private void handleIndexBackwards(long lastIndex, long newIndex) {
+        stats.indexBackwards();
+        currentIndex.set(0);
+        logger.warn(
+                "Resetting index and discarding event on endpoint {} as new index index {} is lower than previous {}",
+                endpoint, newIndex, lastIndex
+        );
+    }
+
+    private void handleIndexForward(long newIndex, ResponseBody body) throws IOException {
+        currentIndex.set(newIndex);
+        byte[] content = body.bytes();
+        if (contentChanged(content)) {
+            handleContentChanged(newIndex, content);
+        } else {
+            handleContentUnchanged(newIndex);
+        }
     }
 
     private void logNonOkHttpResponseWithException(Response response, long backoff, IOException e) {
@@ -185,21 +204,15 @@ class ConsulLongPollCallback implements Callback {
         return !Arrays.equals(oldContent, newContent);
     }
 
-    private long updateIndex(Response response) {
-        String indexString = response.header("X-Consul-Index");
-        if (indexString == null) {
-            logger.error("There was no X-Consul-Index header in response for {} endpoint, retrying", endpoint);
-            return -1;
-        }
+    private void updateIndexAndProcessEvent(long newIndex, ResponseBody body) throws IOException {
+        long lastIndex = currentIndex.get();
 
-        long index = Long.valueOf(indexString);
-        if (currentIndex.get() == index) {
-            stats.indexNotChanged();
-            logger.trace("Discarding event on endpoint {} index {} as index did not change", endpoint, index);
-            return -1;
+        if (newIndex == lastIndex) {
+            handleIndexNotChanged(newIndex);
+        } else if (newIndex < lastIndex) {
+            handleIndexBackwards(lastIndex, newIndex);
         } else {
-            currentIndex.set(index);
-            return index;
+            handleIndexForward(newIndex, body);
         }
     }
 
